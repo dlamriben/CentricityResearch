@@ -1,0 +1,36 @@
+let table = base.getTable('People');
+
+let csvFile = await input.fileAsync(
+    'Pick a CSV file to upload',
+    {allowedFileTypes: ['.csv'], hasHeaderRow: true}
+);
+
+if(csvFile) {
+    let fileRows = csvFile.parsedContents;
+    output.text('Here are the first 10 records of your file');
+    output.table(fileRows.slice(0, 10));
+
+    let proceed = await input.buttonsAsync(
+        'Would you like to continue with this import?',
+        [{label: 'Proceed', variant: 'primary'}, 'Cancel']
+    ) 
+
+    if(proceed == 'Proceed') {
+        let newRecords = fileRows.map(fileRow => ({
+            fields: {
+                'First Name': fileRow.first_name,
+                'Last Name': fileRow.last_name,
+                'Email': fileRow.email
+            }
+        }));
+        output.text('Importing data');
+        while (newRecords.length > 0) {
+            await table.createRecordsAsync(newRecords.slice(0, 50));
+            newRecords = newRecords.slice(50);
+        }
+        output.text('Import completed');
+    }
+}
+
+// call api
+// work within the extension scripting block to compare records and tell it what to do
